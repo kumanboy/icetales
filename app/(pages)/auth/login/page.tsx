@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/app/_components/Header/Header";
 import { useAuth } from "@/app/_context/AuthContext";
@@ -13,7 +13,7 @@ type LoginForm = {
 
 type LoginErrors = Partial<Record<keyof LoginForm | "general", string>>;
 
-export default function LoginPage() {
+function LoginPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { login } = useAuth();
@@ -101,9 +101,7 @@ export default function LoginPage() {
                         </p>
 
                         {errors.general && (
-                            <p className="mb-4 text-sm text-pink-500">
-                                {errors.general}
-                            </p>
+                            <p className="mb-4 text-sm text-pink-500">{errors.general}</p>
                         )}
 
                         <form className="space-y-4" onSubmit={handleSubmit} noValidate>
@@ -128,9 +126,7 @@ export default function LoginPage() {
                                     }`}
                                 />
                                 {errors.email && (
-                                    <p className="text-xs text-pink-500">
-                                        {errors.email}
-                                    </p>
+                                    <p className="text-xs text-pink-500">{errors.email}</p>
                                 )}
                             </div>
 
@@ -155,9 +151,7 @@ export default function LoginPage() {
                                     }`}
                                 />
                                 {errors.password && (
-                                    <p className="text-xs text-pink-500">
-                                        {errors.password}
-                                    </p>
+                                    <p className="text-xs text-pink-500">{errors.password}</p>
                                 )}
                             </div>
 
@@ -185,5 +179,19 @@ export default function LoginPage() {
                 </div>
             </main>
         </>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense
+            fallback={
+                <main className="min-h-screen flex items-center justify-center bg-white">
+                    <span className="text-sm text-gray-500">Loading...</span>
+                </main>
+            }
+        >
+            <LoginPageContent />
+        </Suspense>
     );
 }

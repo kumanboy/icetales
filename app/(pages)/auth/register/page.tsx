@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/app/_components/Header/Header";
 import { useAuth } from "@/app/_context/AuthContext";
@@ -17,7 +17,7 @@ type RegisterForm = {
 
 type RegisterErrors = Partial<Record<keyof RegisterForm | "general", string>>;
 
-export default function RegisterPage() {
+function RegisterPageContent() {
     const router = useRouter();
     const { register } = useAuth();
     const { addToast } = useToastStore();
@@ -36,11 +36,7 @@ export default function RegisterPage() {
 
     const handleChange = (field: keyof RegisterForm, value: string) => {
         setForm((prev) => ({ ...prev, [field]: value }));
-        setErrors((prev) => ({
-            ...prev,
-            [field]: undefined,
-            general: undefined,
-        }));
+        setErrors((prev) => ({ ...prev, [field]: undefined, general: undefined }));
     };
 
     const validate = (): RegisterErrors => {
@@ -48,16 +44,18 @@ export default function RegisterPage() {
 
         if (!form.firstName.trim()) newErrors.firstName = "First name is required.";
         if (!form.lastName.trim()) newErrors.lastName = "Last name is required.";
+
         if (!form.email.trim()) newErrors.email = "Email is required.";
         else {
-            const emailPattern = /^\S+@\S+\.\S+$/;
-            if (!emailPattern.test(form.email.trim()))
-                newErrors.email = "Please enter a valid email address.";
+            const pattern = /^\S+@\S+\.\S+$/;
+            if (!pattern.test(form.email.trim()))
+                newErrors.email = "Please enter a valid email.";
         }
-        if (!form.password)
-            newErrors.password = "Password is required.";
+
+        if (!form.password) newErrors.password = "Password is required.";
         else if (form.password.length < 8)
             newErrors.password = "Password must be at least 8 characters.";
+
         if (!form.confirmPassword)
             newErrors.confirmPassword = "Please confirm your password.";
         else if (form.confirmPassword !== form.password)
@@ -89,7 +87,7 @@ export default function RegisterPage() {
             });
 
             addToast("Account created successfully!", "success");
-            router.push("/");
+            router.push("/auth/login");
         } catch (err: unknown) {
             const message =
                 err instanceof Error ? err.message : "Failed to create account.";
@@ -121,16 +119,11 @@ export default function RegisterPage() {
                         <form className="space-y-4" onSubmit={handleSubmit} noValidate>
                             {/* First name */}
                             <div className="space-y-1">
-                                <label
-                                    htmlFor="firstName"
-                                    className="text-sm font-medium text-gray-800"
-                                >
+                                <label className="text-sm font-medium text-gray-800">
                                     First name
                                 </label>
                                 <input
-                                    id="firstName"
                                     type="text"
-                                    autoComplete="given-name"
                                     value={form.firstName}
                                     onChange={(e) => handleChange("firstName", e.target.value)}
                                     className={`w-full rounded-full border px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-pink-500 ${
@@ -146,16 +139,11 @@ export default function RegisterPage() {
 
                             {/* Last name */}
                             <div className="space-y-1">
-                                <label
-                                    htmlFor="lastName"
-                                    className="text-sm font-medium text-gray-800"
-                                >
+                                <label className="text-sm font-medium text-gray-800">
                                     Last name
                                 </label>
                                 <input
-                                    id="lastName"
                                     type="text"
-                                    autoComplete="family-name"
                                     value={form.lastName}
                                     onChange={(e) => handleChange("lastName", e.target.value)}
                                     className={`w-full rounded-full border px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-pink-500 ${
@@ -171,16 +159,11 @@ export default function RegisterPage() {
 
                             {/* Email */}
                             <div className="space-y-1">
-                                <label
-                                    htmlFor="email"
-                                    className="text-sm font-medium text-gray-800"
-                                >
+                                <label className="text-sm font-medium text-gray-800">
                                     Email
                                 </label>
                                 <input
-                                    id="email"
                                     type="email"
-                                    autoComplete="email"
                                     value={form.email}
                                     onChange={(e) => handleChange("email", e.target.value)}
                                     className={`w-full rounded-full border px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-pink-500 ${
@@ -196,19 +179,12 @@ export default function RegisterPage() {
 
                             {/* Phone */}
                             <div className="space-y-1">
-                                <label
-                                    htmlFor="phone"
-                                    className="text-sm font-medium text-gray-800"
-                                >
+                                <label className="text-sm font-medium text-gray-800">
                                     Phone number{" "}
-                                    <span className="text-xs font-normal text-gray-400">
-                    (optional)
-                  </span>
+                                    <span className="text-xs text-gray-400">(optional)</span>
                                 </label>
                                 <input
-                                    id="phone"
                                     type="tel"
-                                    autoComplete="tel"
                                     value={form.phone}
                                     onChange={(e) => handleChange("phone", e.target.value)}
                                     className="w-full rounded-full border border-gray-200 px-4 py-2 text-sm outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500"
@@ -217,16 +193,11 @@ export default function RegisterPage() {
 
                             {/* Password */}
                             <div className="space-y-1">
-                                <label
-                                    htmlFor="password"
-                                    className="text-sm font-medium text-gray-800"
-                                >
+                                <label className="text-sm font-medium text-gray-800">
                                     Password
                                 </label>
                                 <input
-                                    id="password"
                                     type="password"
-                                    autoComplete="new-password"
                                     value={form.password}
                                     onChange={(e) => handleChange("password", e.target.value)}
                                     className={`w-full rounded-full border px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-pink-500 ${
@@ -235,7 +206,9 @@ export default function RegisterPage() {
                                             : "border-gray-200 focus:border-pink-500"
                                     }`}
                                 />
-                                <p className="text-xs text-gray-400">At least 8 characters.</p>
+                                <p className="text-xs text-gray-400">
+                                    At least 8 characters.
+                                </p>
                                 {errors.password && (
                                     <p className="text-xs text-pink-500">{errors.password}</p>
                                 )}
@@ -243,16 +216,11 @@ export default function RegisterPage() {
 
                             {/* Confirm password */}
                             <div className="space-y-1">
-                                <label
-                                    htmlFor="confirmPassword"
-                                    className="text-sm font-medium text-gray-800"
-                                >
+                                <label className="text-sm font-medium text-gray-800">
                                     Confirm password
                                 </label>
                                 <input
-                                    id="confirmPassword"
                                     type="password"
-                                    autoComplete="new-password"
                                     value={form.confirmPassword}
                                     onChange={(e) =>
                                         handleChange("confirmPassword", e.target.value)
@@ -270,7 +238,7 @@ export default function RegisterPage() {
                                 )}
                             </div>
 
-                            {/* Submit button */}
+                            {/* Submit */}
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
@@ -294,5 +262,13 @@ export default function RegisterPage() {
                 </div>
             </main>
         </>
+    );
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense fallback={<div className="p-10 text-center">Loading…</div>}>
+            <RegisterPageContent />
+        </Suspense>
     );
 }
