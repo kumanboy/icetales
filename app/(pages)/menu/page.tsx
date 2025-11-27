@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ProductCard } from "@/app/_components/ProductCard/ProductCard";
 import { Header } from "@/app/_components/Header/Header";
 import type { Product } from "@/app/_context/CartContext";
 import { fetchStoreProducts } from "@/app/_lib/productClient";
-
 
 type SortOption = "default" | "price-asc" | "rating-desc";
 
@@ -31,7 +30,6 @@ const CATEGORY_ID_TO_FILTER: Record<string, string> = {
     "6": "Sundaes",
 };
 
-// Reusable Filters block (same content for desktop + mobile overlay)
 type FiltersProps = {
     search: string;
     onSearchChange: (value: string) => void;
@@ -46,6 +44,7 @@ type FiltersProps = {
     onReset: () => void;
 };
 
+// Reusable Filters block (same content for desktop + mobile overlay)
 function Filters({
                      search,
                      onSearchChange,
@@ -147,7 +146,7 @@ function Filters({
     );
 }
 
-export default function MenuPage() {
+function MenuPageContent() {
     const searchParams = useSearchParams();
     const categoryIdFromQuery = searchParams.get("categoryId") ?? undefined;
 
@@ -217,9 +216,7 @@ export default function MenuPage() {
     }
 
     if (category !== "all") {
-        filteredProducts = filteredProducts.filter(
-            (p) => p.category === category,
-        );
+        filteredProducts = filteredProducts.filter((p) => p.category === category);
     }
 
     const min = minPrice ? parseFloat(minPrice) : undefined;
@@ -239,8 +236,6 @@ export default function MenuPage() {
             (a, b) => a.price - b.price,
         );
     } else if (sort === "rating-desc") {
-        // rating is 0 for now (backend does not provide it yet),
-        // but we keep logic so it works when rating is added later.
         filteredProducts = [...filteredProducts].sort(
             (a, b) => b.rating - a.rating,
         );
@@ -248,8 +243,7 @@ export default function MenuPage() {
 
     // ---------- PAGINATION ----------
     const totalResults = filteredProducts.length;
-    const pageCount =
-        totalResults === 0 ? 1 : Math.ceil(totalResults / pageSize);
+    const pageCount = totalResults === 0 ? 1 : Math.ceil(totalResults / pageSize);
     const startIndex = (page - 1) * pageSize;
     const endIndex = Math.min(startIndex + pageSize, totalResults);
     const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
@@ -303,11 +297,7 @@ export default function MenuPage() {
                             className="flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:border-pink-500 hover:text-pink-500"
                         >
               <span className="inline-flex h-4 w-4 items-center justify-center">
-                <svg
-                    viewBox="0 0 20 20"
-                    className="h-4 w-4"
-                    aria-hidden="true"
-                >
+                <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
                   <path
                       d="M3 4h14M6 9h8M8 14h4"
                       stroke="currentColor"
@@ -357,7 +347,7 @@ export default function MenuPage() {
                                 )}
                             </div>
 
-                            {/* Products grid – 4 columns */}
+                            {/* Products grid */}
                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                                 {!isLoading &&
                                     !loadError &&
@@ -377,14 +367,10 @@ export default function MenuPage() {
                             </div>
 
                             {/* Pagination */}
-                            {!isLoading &&
-                                !loadError &&
-                                totalResults > pageSize && (
-                                    <div className="mt-2 flex justify-center gap-2">
-                                        {Array.from(
-                                            { length: pageCount },
-                                            (_, i) => i + 1,
-                                        ).map((pageNumber) => (
+                            {!isLoading && !loadError && totalResults > pageSize && (
+                                <div className="mt-2 flex justify-center gap-2">
+                                    {Array.from({ length: pageCount }, (_, i) => i + 1).map(
+                                        (pageNumber) => (
                                             <button
                                                 key={pageNumber}
                                                 type="button"
@@ -397,9 +383,10 @@ export default function MenuPage() {
                                             >
                                                 {pageNumber}
                                             </button>
-                                        ))}
-                                    </div>
-                                )}
+                                        ),
+                                    )}
+                                </div>
+                            )}
                         </section>
                     </div>
                 </div>
@@ -461,5 +448,19 @@ export default function MenuPage() {
                 )}
             </main>
         </>
+    );
+}
+
+export default function MenuPage() {
+    return (
+        <Suspense
+            fallback={
+                <main className="min-h-screen flex items-center justify-center bg-white">
+                    <p className="text-sm text-gray-500">Loading menu…</p>
+                </main>
+            }
+        >
+            <MenuPageContent />
+        </Suspense>
     );
 }
